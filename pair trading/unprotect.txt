@@ -1,3 +1,6 @@
+
+http://www.cnblogs.com/wzh313/articles/9737573.html
+
 # module 1
 Option Explicit
 
