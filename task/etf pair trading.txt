@@ -1,0 +1,26 @@
+pair trading
+
+etf
+成分股
+
+python
+
+生成一些ratio
+
+加入一些signal，比如rsi，比如macd
+
+先跑起来，再来谈数据存储问题
+
+比如在线获取bloolberg的数据等等
+
+先下载数据
+
+目前先使用pandas_datareader
+如果不能使用
+fix_yahoo_finance, 或者看下网络问题
+实在不行，就用阿布的
+
+获取历史数据，adjust close
+算ratio, 算return
+然后通过算ratio的mean， std, 画布林线
+rsi, ma的signal等等, 先把架子搭起来
