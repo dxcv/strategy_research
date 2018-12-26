@@ -97,3 +97,63 @@ def single_pair_trading(data, code1, code2):
         "long_short_return":long_short_return
     }
     return result
+
+def batch_pair_trading(code_list, data):
+
+    df_ratio = pd.DataFrame()
+    df_long_asset = pd.DataFrame()
+    lens = len(code_list)
+    long_return_mat = np.zeros((lens,lens))
+    long_short_return_mat = np.zeros((lens,lens))
+    for i in range(lens):
+        for j in range(i+1, lens):
+            code1 = code_list[i]
+            code2 = code_list[j]
+            temp_result = single_pair_trading(data, code1, code2)
+            temp_result['ratio'].name = "%s-%s" % (code1,code2)
+            temp_result['long_asset_series'].name = "%s-%s" % (code1,code2)
+
+            df_ratio = pd.concat([df_ratio, temp_result['ratio']], axis=1)
+            df_long_asset = pd.concat([df_long_asset, temp_result['long_asset_series']],
+                                     axis=1)
+            long_return_mat[i, j] = temp_result['long_return']
+            long_short_return_mat[i, j] = temp_result['long_short_return']
+
+    df_long_return = pd.DataFrame(long_return_mat)
+    df_long_return.index = code_list
+    df_long_return.columns = code_list
+    df_long_return
+
+    df_long_short_return = pd.DataFrame(long_short_return_mat)
+    df_long_short_return.index = code_list
+    df_long_short_return.columns = code_list
+    df_long_short_return
+    
+    result = {}
+    
+    result['ratio'] = df_ratio
+    result['long_asset'] = df_long_asset
+    result['long_return'] = df_long_return
+    result['long_short_return'] = df_long_short_return
+    
+    return result
+
+def calc_pair_trading(symbol, market_type='us', is_saving=False):
+    """
+    symbol -- 可以是etf 代码 or sector name; 也可以是一组Equity symbol构成的list
+    """
+    if market_type == 'us':
+        data = us_data
+    elif market_type == 'hk':
+        data = hk_data
+        
+    if symbol in etf_list:
+        code_list = code_list_by_sector.query('etf_symbol == "%s"' % symbol).symbol.tolist()
+    elif symbol in sector_list:
+        code_list = code_list_by_sector.query('sector == "%s"' % symbol).symbol.tolist()
+    elif type(symbol) == list:
+        code_list = symbol
+        
+    result = batch_pair_trading(code_list, data)
+    
+    return result
