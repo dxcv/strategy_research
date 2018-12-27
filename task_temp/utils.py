@@ -7,10 +7,11 @@ try:
     import QUANTAXIS as QA
 except:
     print("QUANTAXIS module doesn't install")
-import talib as ta
+
 import datetime, time
 try:
     from tqdm import tqdm_notebook
+    import talib as ta
 except:
     pass
 #=============================================
