@@ -1,16 +1,10 @@
-
-# coding: utf-8
-
-# ====================
-
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# import seaborn as sns
-from string import ascii_letters # 导入大小写英文字母
-import os # 用于返回当前系统路径
-import talib as ta # 用于计算指标
+import seaborn as sns
+from string import ascii_letters
+import os
+import talib as ta
 # import statsmodels.api as sm
 
 try:
@@ -23,23 +17,9 @@ try:
     from tqdm import tqdm_notebook
 except:
     pass
-
-
-# ====================
-
+#=============================================
 
 def get_data(path, output_type='df'):
-    """
-    Implements:
-        从csv中提取到数据
-    
-    Arguments:
-        path -- 字符串类型, 数据文件的路径
-        output_type -- 字符串类型, 数据输出的格式; 'df' or 'qa'
-    
-    Returns:
-        data -- asset data, 数据类型: dataframe or QA_DataStruct
-    """
     data = pd.read_csv(path)
     data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
     data = data.set_index(['date', 'code'])
@@ -47,71 +27,27 @@ def get_data(path, output_type='df'):
         data = QA.QA_DataStruct_Stock_day(data)
     return data
 
-
-# ====================
-
-
 def get_code_list_by_sector(code_list_df, sector, region='US Equity'):
-    """
-    Implements:
-        按行业和地区筛选股票代码
-    
-    Arguments:
-        code_list_df -- DataFrame数据类型, 通过读取'etf_pair_code.xlsx'得到的代码列表
-        sector -- 字符串类型, 行业名称
-        region -- 字符串类型, 地区名称
-    
-    Returns:
-        df -- DataFrame数据类型, 筛选之后的股票代码
-    """
     if region == 'all':
         df = code_list_df.query('sector=="%s"' % (sector))
     else:
-        df = code_list_df.query('sector=="%s" & region=="%s"' % (sector, region))
+        df = code_list_df.query('sector=="%s" & region=="%s"' %\
+                          (sector, region))
     return df
 
-
-# ====================
-
-
 def select_code(data, code):
-    """
-    Implements:
-        按code筛选数据
-    
-    Arguments:
-        data -- 由date和code字段MultiIndex构成的DataFrame数据结构;
-        code -- 字符串数据类型, 用于筛选数据
-    
-    Returns:
-        按code筛选之后的数据
-    """
     def _select_code(data, code):
         return data.loc[(slice(None), code), :].xs(code, level=1)
     try:
         return _select_code(data, code)
     except:
         raise ValueError('CANNOT FIND THIS CODE {}'.format(code))
-
-
-# ====================
-
-
+        
 def position_side(ratio, avg_method='all', period=14):
     """
-    Implements:
-        按照不同的平均方法, 计算出要做多和做空的标的;
-    
-    Arguments:
-        ratio -- Series数据类型, 两个标的Adj Close之比算出的值;
-        avg_method -- 字符串数据类型, 表示采取何种求平均值的方法
-                    -- all, 表示用当前bar之前所有的ratio值求平均
-                    -- rolling, 表示用最近一段时间的ratio值做算术移动平均值
-                    -- ewm, 表示用最近一段时间的ratio值做指数移动平均值
-        period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
-    
-    Returns:
-        position_side_series -- Series数据类型, 用于指示做多还是做空
+    avg_method -- all
+               -- rolling
+               -- ewm
     """
     if avg_method == 'all':
         position_side_list = []
@@ -134,35 +70,22 @@ def position_side(ratio, avg_method='all', period=14):
                 position_side_list.append(np.nan)
         position_side_series = pd.Series(position_side_list, ratio.index)
     elif avg_method == 'rolling':
-        position_side_series = pd.Series(np.where(ratio>ratio.rolling(period).mean(), 1, -1).tolist(), ratio.index)
+        position_side_series = pd.Series(np.where(ratio>ratio.\
+            rolling(period).mean(), 1, -1).tolist(), ratio.index)
     elif avg_method == 'ewm':
-        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).mean(), 1, -1).tolist(), ratio.index)
+        position_side_series = pd.Series(np.where(ratio>ratio.\
+            ewm(span=period).mean(), 1, -1).tolist(), ratio.index)
     return position_side_series
-
-
-# ====================
-
 
 def single_pair_trading(data, code1, code2, method='all', period=170):
     """
-    Implement:
-        计算单对pair trading
-    
-    Arguments:
-        
-        data -- 这里用的是事先下载好的数据，亦可使用在线获取到的数据. 离线数据仅etf成分股的数据
-        code1/code2 -- pair trading的两只股票的代码, 美股就是大写英文字母;
-                    港股则是4位数字+'.hk'的字符串
-                    比如 'MSFT', 'AMZN','0770.hk'(ps, 腾讯的数据并没有进行下载)
-        method -- 字符串数据类型, 表示采取何种求平均值的方法
-                    -- all, 表示用当前bar之前所有的ratio值求平均
-                    -- rolling, 表示用最近一段时间的ratio值做算术移动平均值
-                    -- ewm, 表示用最近一段时间的ratio值做指数移动平均值
-        period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
-        
-    Returns:
-        result -- python中的字典数据, keys分别是以下5个:
-               "ratio","real_signal","long_asset","long_return","long_short_return"
+    data -- 这里用的是事先下载好的数据，亦可使用在线获取到的数据, 离线数据仅etf成分股的数据
+    code1/code2 -- pair trading的两只股票的代码, 美股就是大写英文字母，港股则是4位数字+'.hk'的字符串
+                比如 'MSFT', 'AMZN','0770.hk'(ps, 腾讯的数据并没有进行下载)
+    method -- 判断买卖依据的方法
+           -- all : 判断当前的ratio值是否大于之前所有ratio的平均值;
+           -- rolling : 判断当前ratio是否大于最近一段时间的ratio平均值,计算方式是算数移动平均
+           -- ewm : 判断当前ratio是否大于最近一段时间的ratio平均值,计算方式是指数移动平均
     """
     # retrieve adj close
     asset_1_close = select_code(data, code1)['Adj Close']
@@ -182,7 +105,8 @@ def single_pair_trading(data, code1, code2, method='all', period=170):
     asset_1_pct = asset_1_close.pct_change()
     asset_2_pct = asset_2_close.pct_change()
     
-    long_return = ((1+real_signal)/2 * asset_1_pct +  (1-real_signal)/2 * asset_2_pct).mean()
+    long_return = ((1+real_signal)/2 * asset_1_pct + \
+                 (1-real_signal)/2 * asset_2_pct).mean()
     long_short_return = (real_signal * (asset_1_pct - asset_2_pct)).mean()
     
     result = {
@@ -194,25 +118,8 @@ def single_pair_trading(data, code1, code2, method='all', period=170):
     }
     return result
 
-
-# ====================
-
-
 def batch_pair_trading(code_list, data, method, period, show_bar):
-    """
-    Implements:
-        返回一组assets的两两pair trading的结果
-    
-    Arguments:
-        code_list -- 由code组成的list
-        data -- equity的行情数据
-        method -- 字符串数据类型, 表示采取何种求平均值的方法
-        period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
-        show_bar -- 是否显示计算过程中的进度条
-    Returns:
-        result -- python中的字典数据, keys分别是以下4个:
-               "ratio","long_asset","long_return","long_short_return"
-    """
+
     df_ratio = pd.DataFrame()
     df_long_asset = pd.DataFrame()
     lens = len(code_list)
@@ -273,30 +180,8 @@ def batch_pair_trading(code_list, data, method, period, show_bar):
     
     return result
 
-
-# ====================
-
-
 def store_in_excel(result, is_saving, save_name):
-    """
-    Implements:
-        将result保存进excel中
-        
-    Arguments:
-        result -- python字典数据类型, 由single_pair_trading or batch_pair_trading计算得到
-            keys分别是以下4个:"ratio","long_asset","long_return","long_short_return"
-        is_saving -- 是否保存/保存哪些表 
-                  -- True, bool type, 保存所有的表进excel
-                  -- 'all', str type, 保存所有的表进excel
-                  -- "ratio","long_asset","long_return","long_short_return"中任意一个进行保存
-                  -- '0123', str type, 以数字代表4个key, 任意组合即为保存指定表
-        save_name -- excel的文件名
-                  -- 若为None, 则随机生成一个8位英文字符的文件名
-                  -- str type, excel的文件名
     
-    Returns:
-        None
-    """
     if save_name is None:
         save_name = ''.join(np.random.choice(list(ascii_letters), 8))
     
@@ -326,54 +211,22 @@ def store_in_excel(result, is_saving, save_name):
             
     writer.save()
     print('\rfinish, see you          ')
-
-
-# ====================
-
-
-def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None, method='all', period=170, show_bar=True):
-    """
-    Implements:
-        计算一组assets的pair trading, 并且可以选择是否存入到excel表中
     
-    Arguments:
-        symbol -- 字符串数据类型 or pythonlist数据类型, 
-                  可以是etf 代码 或者 sector name; 
-                  也可以是一组Equity symbol构成的list
-        data_source -- 字符串数据类型,
-                    -- 'us', 本地美股数据,
-                    -- 'hk', 本地港股数据,
-                    -- 'ol', 在线获取数据.
-        is_saving -- 是否保存/保存哪些表 
-                  -- True, bool type, 保存所有的表进excel
-                  -- 'all', str type, 保存所有的表进excel
-                  -- "ratio","long_asset","long_return","long_short_return"中任意一个进行保存
-                  -- '0123', str type, 以数字代表4个key, 任意组合即为保存指定表
-        save_name -- excel的文件名
-                  -- 若为None, 则随机生成一个8位英文字符的文件名
-                  -- str type, excel的文件名
-        method -- 字符串数据类型, 表示采取何种求平均值的方法
-                    -- all, 表示用当前bar之前所有的ratio值求平均
-                    -- rolling, 表示用最近一段时间的ratio值做算术移动平均值
-                    -- ewm, 表示用最近一段时间的ratio值做指数移动平均值
-        period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
-        show_bar -- 是否显示计算过程中的进度条
+def calc_pair_trading(symbol, market_type='us', is_saving=False, save_name=None, method='all', period=170, show_bar=False):
     """
-    
+    symbol -- 可以是etf 代码 or sector name; 也可以是一组Equity symbol构成的list
+    """
+    if market_type == 'us':
+        data = us_data
+    elif market_type == 'hk':
+        data = hk_data
+        
     if symbol in etf_list:
         code_list = code_list_by_sector.query('etf_symbol == "%s"' % symbol).symbol.tolist()
     elif symbol in sector_list:
         code_list = code_list_by_sector.query('sector == "%s"' % symbol).symbol.tolist()
     elif type(symbol) == list:
         code_list = symbol
-    
-    if data_source == 'us':
-        data = us_data
-    elif data_source == 'hk':
-        data = hk_data
-    elif data_source == 'ol':
-        pass
-    
         
     result = batch_pair_trading(code_list, data, method, period, show_bar)
     
@@ -382,10 +235,6 @@ def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None,
     
     return result
 
-
-# ====================
-
-
 code_list_by_sector = pd.read_excel('data/etf_pair_code.xlsx', dtype={'symbol':str})
 sector_list = code_list_by_sector.sector.unique().tolist()
 etf_list = code_list_by_sector.etf_symbol.unique().tolist()
@@ -393,4 +242,3 @@ region_list = code_list_by_sector.region.unique().tolist()
 
 us_data = get_data('data/us_data.csv')
 hk_data = get_data('data/hk_data.csv')
-

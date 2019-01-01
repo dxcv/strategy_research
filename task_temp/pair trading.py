@@ -15,6 +15,12 @@ try:
     import talib as ta
 except:
     pass
+
+plt.rcParams['figure.figsize'] = [12, 8]
+plt.rcParams['image.interpolation'] = 'nearest'
+plt.rcParams['image.cmap'] = 'gray'
+plt.style.use('ggplot')
+
 """
 # etf symbol
 
