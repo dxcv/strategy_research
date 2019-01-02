@@ -49,9 +49,28 @@ def get_data(path, output_type='df'):
 
 
 # ====================
+def get_code_list_by_etf(code_list_df, etf_symbol, region='us'):
+    """
+    Implements:
+        按行业和地区筛选股票代码
+    
+    Arguments:
+        code_list_df -- DataFrame数据类型, 通过读取'etf_pair_code.xlsx'得到的代码列表
+        etf -- 字符串类型, etf 代码
+        region -- 字符串类型, 地区名称
+    
+    Returns:
+        df -- DataFrame数据类型, 筛选之后的股票代码
+    """
+    
+    if region == 'all':
+        df = code_list_df.query('etf_symbol=="%s"' % (etf_symbol))
+    else:
+        region = region.upper() + ' Equity'
+        df = code_list_df.query('etf_symbol=="%s" & region=="%s"' % (etf_symbol, region))
+    return df
 
-
-def get_code_list_by_sector(code_list_df, sector, region='US Equity'):
+def get_code_list_by_sector(code_list_df, etf_symbol, region='us'):
     """
     Implements:
         按行业和地区筛选股票代码
@@ -64,9 +83,11 @@ def get_code_list_by_sector(code_list_df, sector, region='US Equity'):
     Returns:
         df -- DataFrame数据类型, 筛选之后的股票代码
     """
+    
     if region == 'all':
         df = code_list_df.query('sector=="%s"' % (sector))
     else:
+        region = region.upper() + ' Equity'
         df = code_list_df.query('sector=="%s" & region=="%s"' % (sector, region))
     return df
 
@@ -165,11 +186,16 @@ def single_pair_trading(data, code1, code2, method='all', period=170):
                "ratio","real_signal","long_asset","long_return","long_short_return"
     """
     # retrieve adj close
+
     asset_1_close = select_code(data, code1)['Adj Close']
     asset_2_close = select_code(data, code2)['Adj Close']
     
     asset_1_close.index = pd.DatetimeIndex(asset_1_close.index)
     asset_2_close.index = pd.DatetimeIndex(asset_2_close.index)
+    
+    # normalization
+#     asset_1_close = (asset_1_close - asset_1_close.mean()) / asset_1_close.std() 
+#     asset_2_close = (asset_2_close - asset_2_close.mean()) / asset_2_close.std()
     
     # calulate ratio
     ratio = asset_1_close / asset_2_close
@@ -229,15 +255,21 @@ def batch_pair_trading(code_list, data, method, period, show_bar):
 
                 code1 = code_list[i]
                 code2 = code_list[j]
-                temp_result = single_pair_trading(data, code1, code2, method, period)
-                temp_result['ratio'].name = "%s-%s" % (code1,code2)
-                temp_result['long_asset'].name = "%s-%s" % (code1,code2)
+                try:
+                    temp_result = single_pair_trading(data, code1, code2, method, period)
+                    temp_result['ratio'].name = "%s-%s" % (code1,code2)
+                    temp_result['long_asset'].name = "%s-%s" % (code1,code2)
 
-                df_ratio = pd.concat([df_ratio, temp_result['ratio']], axis=1)
-                df_long_asset = pd.concat([df_long_asset, temp_result['long_asset']],
-                                         axis=1)
-                long_return_mat[i, j] = temp_result['long_return']
-                long_short_return_mat[i, j] = temp_result['long_short_return']
+                    df_ratio = pd.concat([df_ratio, temp_result['ratio']], axis=1)
+                    df_long_asset = pd.concat([df_long_asset, temp_result['long_asset']],
+                                             axis=1)
+                    long_return_mat[i, j] = temp_result['long_return']
+                    long_short_return_mat[i, j] = temp_result['long_short_return']
+                except:
+                    print("%s or %s don't have data, please check" % (code1, code2))
+                    
+                    
+            
     else:
         for i in range(lens):
             for j in range(i+1, lens):           
@@ -361,12 +393,16 @@ def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None,
     """
     
     if symbol in etf_list:
-        code_list = code_list_by_sector.query('etf_symbol == "%s"' % symbol).symbol.tolist()
+        code_list = get_code_list_by_etf(code_list_by_sector, symbol, region = data_source).symbol.tolist()
+        # code_list = code_list_by_sector.query('etf_symbol == "%s"' % symbol).symbol.tolist()
     elif symbol in sector_list:
-        code_list = code_list_by_sector.query('sector == "%s"' % symbol).symbol.tolist()
+        code_list = get_code_list_by_sector(code_list_by_sector, symbol, region = data_source).symbol.tolist()
+        # code_list = code_list_by_sector.query('sector == "%s"' % symbol).symbol.tolist()
     elif type(symbol) == list:
         code_list = symbol
-    
+        
+    if data_source == 'all':
+        data = pd.concat([us_data, hk_data], axis=0)
     if data_source == 'us':
         data = us_data
     elif data_source == 'hk':
