@@ -138,9 +138,10 @@ def position_side(ratio, avg_method='all', period=14):
         position_side_list = []
         for i in range(ratio.shape[0]):
             if i > 1:
-                if ratio[i] > np.mean(ratio[:i-1]):
+                temp_mean = np.nanmean(ratio[:i-1])
+                if ratio[i] > temp_mean:
                     position_side_list.append(1)
-                elif ratio[i] < np.mean(ratio[:i-1]):
+                elif ratio[i] < temp_mean:
                     position_side_list.append(-1)
                 else:
                     position_side_list.append(np.nan)
@@ -155,9 +156,9 @@ def position_side(ratio, avg_method='all', period=14):
                 position_side_list.append(np.nan)
         position_side_series = pd.Series(position_side_list, ratio.index)
     elif avg_method == 'rolling':
-        position_side_series = pd.Series(np.where(ratio>ratio.rolling(period).mean(), 1, -1).tolist(), ratio.index)
+        position_side_series = pd.Series(np.where(ratio>ratio.rolling(period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
     elif avg_method == 'ewm':
-        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).mean(), 1, -1).tolist(), ratio.index)
+        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
     return position_side_series
 
 
