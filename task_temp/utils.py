@@ -13,10 +13,10 @@ import os # 用于返回当前系统路径
 import talib as ta # 用于计算指标
 # import statsmodels.api as sm
 
-try:
-    import QUANTAXIS as QA
-except:
-    print("QUANTAXIS module doesn't install")
+# try:
+#     import QUANTAXIS as QA
+# except:
+#     print("QUANTAXIS module doesn't install")
 
 import datetime, time
 try:
@@ -70,7 +70,7 @@ def get_code_list_by_etf(code_list_df, etf_symbol, region='us'):
         df = code_list_df.query('etf_symbol=="%s" & region=="%s"' % (etf_symbol, region))
     return df
 
-def get_code_list_by_sector(code_list_df, etf_symbol, region='us'):
+def get_code_list_by_sector(code_list_df, sector, region='us'):
     """
     Implements:
         按行业和地区筛选股票代码
@@ -169,15 +169,16 @@ def rsi_interval(value, upper, lower, return_method='string'):
         if return_method == 'string':
             return 'low'
         elif return_method == 'integer':
-            return -1
+            # return -1
+            return value
     elif (value > lower) & (value<=upper):
         return 0
     elif value > upper:
         if return_method == 'string':
             return 'high'
         elif return_method == 'integer':
-            return 1
-    
+            # return 1
+            return value
 # ====================
 
 def single_pair_trading(data, code1, code2, method, period, rsi_period, upper, lower):
@@ -221,8 +222,11 @@ def single_pair_trading(data, code1, code2, method, period, rsi_period, upper, l
     
     # use rsi_mean +/- rsi_std
     # 如果用动态的rsi标准差作为上下轨，那么分别用rsi和上下轨比较，然后取并集？
+    # 亦可直接把30到70之间的数设置为0即可
     
-    interval_by_str = rsi.apply(lambda x : rsi_interval(x, upper, lower, return_method='string'))
+    # interval_by_str = rsi.apply(lambda x : rsi_interval(x, upper, lower, return_method='string'))
+    # interval_by_int = rsi.apply(lambda x : rsi_interval(x, upper, lower, return_method='integer'))
+    interval_by_int = rsi.mask((rsi>lower) & (rsi<=upper), 0)
     
     #=====
     
@@ -242,7 +246,9 @@ def single_pair_trading(data, code1, code2, method, period, rsi_period, upper, l
         "real_signal":real_signal,
         "long_asset":long_asset,
         "long_return":long_return,
-        "long_short_return":long_short_return
+        "long_short_return":long_short_return,
+        "rsi":rsi,
+        "rsi_mask":interval_by_int
     }
     return result
 
@@ -270,6 +276,8 @@ def batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower
     lens = len(code_list)
     long_return_mat = np.zeros((lens,lens))
     long_short_return_mat = np.zeros((lens,lens))
+    df_rsi = pd.DataFrame()
+    df_rsi_mask = pd.DataFrame()
     
     
 #     for i in range(lens):
@@ -286,12 +294,16 @@ def batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower
                                                      upper, lower)
                     temp_result['ratio'].name = "%s-%s" % (code1,code2)
                     temp_result['long_asset'].name = "%s-%s" % (code1,code2)
-
+                    temp_result['rsi'].name = "%s-%s" % (code1,code2)
+                    temp_result['rsi_mask'].name = "%s-%s" % (code1,code2)
+    
                     df_ratio = pd.concat([df_ratio, temp_result['ratio']], axis=1)
                     df_long_asset = pd.concat([df_long_asset, temp_result['long_asset']],
                                              axis=1)
                     long_return_mat[i, j] = temp_result['long_return']
                     long_short_return_mat[i, j] = temp_result['long_short_return']
+                    df_rsi = pd.concat([df_rsi, temp_result['rsi']], axis=1)
+                    df_rsi_mask = pd.concat([df_rsi_mask, temp_result['rsi_mask']], axis=1)
                 except:
                     print("%s or %s don't have data, please check" % (code1, code2))
                     
@@ -303,26 +315,33 @@ def batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower
 
                 code1 = code_list[i]
                 code2 = code_list[j]
-                temp_result = single_pair_trading(data, code1, code2, method, period, rsi_period,
-                                                 upper, lower)
-                temp_result['ratio'].name = "%s-%s" % (code1,code2)
-                temp_result['long_asset'].name = "%s-%s" % (code1,code2)
+                try:
+                    temp_result = single_pair_trading(data, code1, code2, method, period, rsi_period,
+                                                     upper, lower)
+                    temp_result['ratio'].name = "%s-%s" % (code1,code2)
+                    temp_result['long_asset'].name = "%s-%s" % (code1,code2)
+                    temp_result['rsi'].name = "%s-%s" % (code1,code2)
+                    temp_result['rsi_mask'].name = "%s-%s" % (code1,code2)
 
-                df_ratio = pd.concat([df_ratio, temp_result['ratio']], axis=1)
-                df_long_asset = pd.concat([df_long_asset, temp_result['long_asset']],
-                                         axis=1)
-                long_return_mat[i, j] = temp_result['long_return']
-                long_short_return_mat[i, j] = temp_result['long_short_return']
+                    df_ratio = pd.concat([df_ratio, temp_result['ratio']], axis=1)
+                    df_long_asset = pd.concat([df_long_asset, temp_result['long_asset']],
+                                             axis=1)
+                    long_return_mat[i, j] = temp_result['long_return']
+                    long_short_return_mat[i, j] = temp_result['long_short_return']
+                    df_rsi = pd.concat([df_rsi, temp_result['rsi']], axis=1)
+                    df_rsi_mask = pd.concat([df_rsi_mask, temp_result['rsi_mask']], axis=1)
+                except:
+                    print("%s or %s don't have data, please check" % (code1, code2))
 
     df_long_return = pd.DataFrame(long_return_mat)
     df_long_return.index = code_list
     df_long_return.columns = code_list
-    df_long_return
+    # df_long_return
 
     df_long_short_return = pd.DataFrame(long_short_return_mat)
     df_long_short_return.index = code_list
     df_long_short_return.columns = code_list
-    df_long_short_return
+    # df_long_short_return
     
     result = {}
     
@@ -330,6 +349,8 @@ def batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower
     result['long_asset'] = df_long_asset
     result['long_return'] = df_long_return
     result['long_short_return'] = df_long_short_return
+    result['rsi'] = df_rsi
+    result['rsi_mask'] = df_rsi_mask
     
     return result
 
@@ -380,6 +401,10 @@ def store_in_excel(result, is_saving, save_name):
         result['long_return'].to_excel(writer, sheet_name='long_return')
     elif is_saving.lower() == 'long_short_return':
         result['long_short_return'].to_excel(writer, sheet_name='long_short_return')
+    elif is_saving.lower() == 'rsi':
+        result['rsi'].to_excel(writer, sheet_name='rsi')
+    elif is_saving.lower() == 'rsi_mask':
+        result['rsi_mask'].to_excel(writer, sheet_name='rsi_mask')
     else:
         for i in is_saving:
             result[keys[int(i)]].to_excel(writer, sheet_name=keys[int(i)])
@@ -391,7 +416,8 @@ def store_in_excel(result, is_saving, save_name):
 # ====================
 
 
-def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None, method='all', period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
+def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None, method='all', 
+                      period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
     """
     Implements:
         计算一组assets的pair trading, 并且可以选择是否存入到excel表中
