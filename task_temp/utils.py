@@ -118,7 +118,7 @@ def select_code(data, code):
 # ====================
 
 
-def position_side(ratio, avg_method='all', period=14):
+def position_side(ratio, avg_method, period):
     """
     Implements:
         按照不同的平均方法, 计算出要做多和做空的标的;
@@ -164,8 +164,23 @@ def position_side(ratio, avg_method='all', period=14):
 
 # ====================
 
+def rsi_interval(value, upper, lower, return_method='string'):
+    if value <= lower:
+        if return_method == 'string':
+            return 'low'
+        elif return_method == 'integer':
+            return -1
+    elif (value > lower) & (value<=upper):
+        return 0
+    elif value > upper:
+        if return_method == 'string':
+            return 'high'
+        elif return_method == 'integer':
+            return 1
+    
+# ====================
 
-def single_pair_trading(data, code1, code2, method='all', period=170):
+def single_pair_trading(data, code1, code2, method, period, rsi_period, upper, lower):
     """
     Implement:
         计算单对pair trading
@@ -201,6 +216,16 @@ def single_pair_trading(data, code1, code2, method='all', period=170):
     # calulate ratio
     ratio = asset_1_close / asset_2_close
     
+    # 待施工
+    rsi = ta.RSI(ratio, timeperiod=rsi_period)
+    
+    # use rsi_mean +/- rsi_std
+    # 如果用动态的rsi标准差作为上下轨，那么分别用rsi和上下轨比较，然后取并集？
+    
+    interval_by_str = rsi.apply(lambda x : rsi_interval(x, upper, lower, return_method='string'))
+    
+    #=====
+    
     position_side_series = position_side(ratio, method, period)
     real_signal = position_side_series.shift(1)
     long_asset = real_signal.apply(lambda x : code1 if x==1 else
@@ -225,7 +250,7 @@ def single_pair_trading(data, code1, code2, method='all', period=170):
 # ====================
 
 
-def batch_pair_trading(code_list, data, method, period, show_bar):
+def batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower, show_bar):
     """
     Implements:
         返回一组assets的两两pair trading的结果
@@ -257,7 +282,8 @@ def batch_pair_trading(code_list, data, method, period, show_bar):
                 code1 = code_list[i]
                 code2 = code_list[j]
                 try:
-                    temp_result = single_pair_trading(data, code1, code2, method, period)
+                    temp_result = single_pair_trading(data, code1, code2, method, period, rsi_period,
+                                                     upper, lower)
                     temp_result['ratio'].name = "%s-%s" % (code1,code2)
                     temp_result['long_asset'].name = "%s-%s" % (code1,code2)
 
@@ -277,7 +303,8 @@ def batch_pair_trading(code_list, data, method, period, show_bar):
 
                 code1 = code_list[i]
                 code2 = code_list[j]
-                temp_result = single_pair_trading(data, code1, code2, method, period)
+                temp_result = single_pair_trading(data, code1, code2, method, period, rsi_period,
+                                                 upper, lower)
                 temp_result['ratio'].name = "%s-%s" % (code1,code2)
                 temp_result['long_asset'].name = "%s-%s" % (code1,code2)
 
@@ -364,7 +391,7 @@ def store_in_excel(result, is_saving, save_name):
 # ====================
 
 
-def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None, method='all', period=170, show_bar=True):
+def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None, method='all', period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
     """
     Implements:
         计算一组assets的pair trading, 并且可以选择是否存入到excel表中
@@ -412,7 +439,7 @@ def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None,
         pass
     
         
-    result = batch_pair_trading(code_list, data, method, period, show_bar)
+    result = batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower, show_bar)
     
     if is_saving is not False:
         store_in_excel(result, is_saving, save_name)
