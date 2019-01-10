@@ -462,7 +462,7 @@ def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None,
     elif data_source == 'hk':
         data = hk_data
     elif data_source == 'ol':
-        pass
+        data = ol_data
     
         
     result = batch_pair_trading(code_list, data, method, period, rsi_period, upper, lower, show_bar)
@@ -481,6 +481,10 @@ sector_list = code_list_by_sector.sector.unique().tolist()
 etf_list = code_list_by_sector.etf_symbol.unique().tolist()
 region_list = code_list_by_sector.region.unique().tolist()
 
+try:
+	ol_data = get_data('data/data.csv')
+except:
+	pass
 us_data = get_data('data/us_data.csv')
 hk_data = get_data('data/hk_data.csv')
 
