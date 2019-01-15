@@ -41,7 +41,10 @@ def get_data(path, output_type='df'):
         data -- asset data, 数据类型: dataframe or QA_DataStruct
     """
     data = pd.read_csv(path)
-    data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
+    try:
+        data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
+    except:
+        data.columns = ['date', 'high', 'open', 'low', 'volume', 'Adj Close', 'code']
     data = data.set_index(['date', 'code'])
     if output_type == 'qa':
         data = QA.QA_DataStruct_Stock_day(data)
@@ -416,7 +419,7 @@ def store_in_excel(result, is_saving, save_name):
 # ====================
 
 
-def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None, method='all', 
+def calc_pair_trading(symbol, data_source='us', region='us', is_saving=False, save_name=None, method='all', 
                       period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
     """
     Implements:
@@ -444,13 +447,13 @@ def calc_pair_trading(symbol, data_source='us', is_saving=False, save_name=None,
                     -- ewm, 表示用最近一段时间的ratio值做指数移动平均值
         period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
         show_bar -- 是否显示计算过程中的进度条
-    """
+    """    
     
     if symbol in etf_list:
-        code_list = get_code_list_by_etf(code_list_by_sector, symbol, region = data_source).symbol.tolist()
+        code_list = get_code_list_by_etf(code_list_by_sector, symbol, region = region).symbol.tolist()
         # code_list = code_list_by_sector.query('etf_symbol == "%s"' % symbol).symbol.tolist()
     elif symbol in sector_list:
-        code_list = get_code_list_by_sector(code_list_by_sector, symbol, region = data_source).symbol.tolist()
+        code_list = get_code_list_by_sector(code_list_by_sector, symbol, region = region).symbol.tolist()
         # code_list = code_list_by_sector.query('sector == "%s"' % symbol).symbol.tolist()
     elif type(symbol) == list:
         code_list = symbol
@@ -481,10 +484,11 @@ sector_list = code_list_by_sector.sector.unique().tolist()
 etf_list = code_list_by_sector.etf_symbol.unique().tolist()
 region_list = code_list_by_sector.region.unique().tolist()
 
-try:
-	ol_data = get_data('data/data.csv')
-except:
-	pass
+ol_data = get_data('data/data.csv')
+# try:
+# 	ol_data = get_data('data/data.csv')
+# except:
+# 	print('there is something wrong')
 us_data = get_data('data/us_data.csv')
 hk_data = get_data('data/hk_data.csv')
 
