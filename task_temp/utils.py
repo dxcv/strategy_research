@@ -45,6 +45,7 @@ def get_data(path, output_type='df'):
         data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
     except:
         data.columns = ['date', 'high', 'open', 'low', 'volume', 'Adj Close', 'code']
+    data.date = pd.DatetimeIndex(data.date)
     data = data.set_index(['date', 'code'])
     if output_type == 'qa':
         data = QA.QA_DataStruct_Stock_day(data)
@@ -52,7 +53,7 @@ def get_data(path, output_type='df'):
 
 
 # ====================
-def get_code_list_by_etf(code_list_df, etf_symbol, region='us'):
+def get_code_list_by_etf(code_list_df, etf_symbol, region):
     """
     Implements:
         按行业和地区筛选股票代码
@@ -73,7 +74,7 @@ def get_code_list_by_etf(code_list_df, etf_symbol, region='us'):
         df = code_list_df.query('etf_symbol=="%s" & region=="%s"' % (etf_symbol, region))
     return df
 
-def get_code_list_by_sector(code_list_df, sector, region='us'):
+def get_code_list_by_sector(code_list_df, sector, region):
     """
     Implements:
         按行业和地区筛选股票代码
@@ -419,7 +420,7 @@ def store_in_excel(result, is_saving, save_name):
 # ====================
 
 
-def calc_pair_trading(symbol, data_source='us', region='us', is_saving=False, save_name=None, method='all', 
+def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='all', 
                       period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
     """
     Implements:
@@ -450,11 +451,11 @@ def calc_pair_trading(symbol, data_source='us', region='us', is_saving=False, sa
     """    
     
     if symbol in etf_list:
-        code_list = get_code_list_by_etf(code_list_by_sector, symbol, region = region).symbol.tolist()
-        # code_list = code_list_by_sector.query('etf_symbol == "%s"' % symbol).symbol.tolist()
+        code_list = get_code_list_by_etf(df_code, symbol, region = region).symbol.tolist()
+        # code_list = df_code.query('etf_symbol == "%s"' % symbol).symbol.tolist()
     elif symbol in sector_list:
-        code_list = get_code_list_by_sector(code_list_by_sector, symbol, region = region).symbol.tolist()
-        # code_list = code_list_by_sector.query('sector == "%s"' % symbol).symbol.tolist()
+        code_list = get_code_list_by_sector(df_code, symbol, region = region).symbol.tolist()
+        # code_list = df_code.query('sector == "%s"' % symbol).symbol.tolist()
     elif type(symbol) == list:
         code_list = symbol
         
@@ -479,10 +480,10 @@ def calc_pair_trading(symbol, data_source='us', region='us', is_saving=False, sa
 # ====================
 
 
-code_list_by_sector = pd.read_excel('data/etf_pair_code.xlsx', dtype={'symbol':str})
-sector_list = code_list_by_sector.sector.unique().tolist()
-etf_list = code_list_by_sector.etf_symbol.unique().tolist()
-region_list = code_list_by_sector.region.unique().tolist()
+df_code = pd.read_excel('data/etf_pair_code.xlsx', dtype={'symbol':str})
+sector_list = df_code.sector.unique().tolist()
+etf_list = df_code.etf_symbol.unique().tolist()
+region_list = df_code.region.unique().tolist()
 
 ol_data = get_data('data/data.csv')
 # try:
