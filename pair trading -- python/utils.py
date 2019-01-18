@@ -41,13 +41,14 @@ def get_data(path, output_type='df'):
     Returns:
         data -- asset data, 数据类型: dataframe or QA_DataStruct
     """
-    data = pd.read_csv(path)
+    data = pd.read_csv(path, dtype={'code':str})
     try:
         data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
     except:
         data.columns = ['date', 'high', 'open', 'low', 'volume', 'Adj Close', 'code']
     data.date = pd.DatetimeIndex(data.date)
     data = data.set_index(['date', 'code'])
+    data = data.sort_index(level='date')
     if output_type == 'qa':
         data = QA.QA_DataStruct_Stock_day(data)
     return data
