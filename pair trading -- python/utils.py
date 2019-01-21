@@ -163,7 +163,8 @@ def position_side(ratio, avg_method, period):
     elif avg_method == 'rolling':
         position_side_series = pd.Series(np.where(ratio>ratio.rolling(period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
     elif avg_method == 'ewm':
-        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
+#         position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
+        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).mean(), 1, -1).tolist(), ratio.index)
     return position_side_series
 
 
@@ -421,7 +422,7 @@ def store_in_excel(result, is_saving, save_name):
 # ====================
 
 
-def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='all', 
+def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='rolling', 
                       period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
     """
     Implements:
@@ -478,7 +479,7 @@ def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, s
     return result
 
 
-# ====================
+# ==========help function==========
 def save_file(dataframe, name):
     with open(name, 'wb') as f:
         pickle.dump(dataframe, f)
@@ -487,6 +488,23 @@ def load_file(filename):
     with open(filename, 'rb') as f:
         res = pickle.load(f)
         return res
+    
+def calc_corr(tickers, start, end):
+    """
+    tickers -- etf的代码, 或者需要进行相关性一串ticker构成的列表
+    start -- 计算相关性系数的开始时间
+    end -- 计算相关性系数的结束时间
+    """
+    if type(tickers) is str:
+        codes = get_code_list_by_etf(df_code, tickers, 'all').symbol.tolist()
+        data = ol_data.loc[(slice(start, end), codes),:]
+    elif type(tickers) is list:
+        data = ol_data.loc[(slice(start, end), tickers),:]
+    close = data.pivot_table(values=['Adj Close'], index=['date'],
+                     columns=['code'])['Adj Close']
+    corr = close.corr()
+    
+    return corr
 # ====================
 
 df_code = pd.read_excel('data/etf_pair_code.xlsx', dtype={'symbol':str})
