@@ -47,8 +47,7 @@ def get_data(path, output_type='df'):
     except:
         data.columns = ['date', 'high', 'open', 'low', 'volume', 'Adj Close', 'code']
     data.date = pd.DatetimeIndex(data.date)
-    data = data.set_index(['date', 'code'])
-    data = data.sort_index(level='date')
+    data = data.set_index(['date', 'code']).sort_index(level='date')
     if output_type == 'qa':
         data = QA.QA_DataStruct_Stock_day(data)
     return data
