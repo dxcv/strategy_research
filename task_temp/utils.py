@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from string import ascii_letters # 导入大小写英文字母
 import os # 用于返回当前系统路径
 import talib as ta # 用于计算指标
+import pickle
 # import statsmodels.api as sm
 
 # try:
@@ -40,13 +41,13 @@ def get_data(path, output_type='df'):
     Returns:
         data -- asset data, 数据类型: dataframe or QA_DataStruct
     """
-    data = pd.read_csv(path)
+    data = pd.read_csv(path, dtype={'code':str})
     try:
         data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
     except:
         data.columns = ['date', 'high', 'open', 'low', 'volume', 'Adj Close', 'code']
     data.date = pd.DatetimeIndex(data.date)
-    data = data.set_index(['date', 'code'])
+    data = data.set_index(['date', 'code']).sort_index(level='date').dropna()
     if output_type == 'qa':
         data = QA.QA_DataStruct_Stock_day(data)
     return data
@@ -162,7 +163,8 @@ def position_side(ratio, avg_method, period):
     elif avg_method == 'rolling':
         position_side_series = pd.Series(np.where(ratio>ratio.rolling(period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
     elif avg_method == 'ewm':
-        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
+#         position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).apply(lambda x : np.nanmean(x), raw=True), 1, -1).tolist(), ratio.index)
+        position_side_series = pd.Series(np.where(ratio>ratio.ewm(span=period).mean(), 1, -1).tolist(), ratio.index)
     return position_side_series
 
 
@@ -211,8 +213,8 @@ def single_pair_trading(data, code1, code2, method, period, rsi_period, upper, l
     asset_1_close = select_code(data, code1)['Adj Close']
     asset_2_close = select_code(data, code2)['Adj Close']
     
-    asset_1_close.index = pd.DatetimeIndex(asset_1_close.index)
-    asset_2_close.index = pd.DatetimeIndex(asset_2_close.index)
+#     asset_1_close.index = pd.DatetimeIndex(asset_1_close.index)
+#     asset_2_close.index = pd.DatetimeIndex(asset_2_close.index)
     
     # normalization
 #     asset_1_close = (asset_1_close - asset_1_close.mean()) / asset_1_close.std() 
@@ -420,7 +422,7 @@ def store_in_excel(result, is_saving, save_name):
 # ====================
 
 
-def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='all', 
+def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='rolling', 
                       period=170, rsi_period=14, upper=70, lower=30, show_bar=True):
     """
     Implements:
@@ -477,8 +479,33 @@ def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, s
     return result
 
 
+# ==========help function==========
+def save_file(dataframe, name):
+    with open(name, 'wb') as f:
+        pickle.dump(dataframe, f)
+    
+def load_file(filename):
+    with open(filename, 'rb') as f:
+        res = pickle.load(f)
+        return res
+    
+def calc_corr(tickers, start, end):
+    """
+    tickers -- etf的代码, 或者需要进行相关性一串ticker构成的列表
+    start -- 计算相关性系数的开始时间
+    end -- 计算相关性系数的结束时间
+    """
+    if type(tickers) is str:
+        codes = get_code_list_by_etf(df_code, tickers, 'all').symbol.tolist()
+        data = ol_data.loc[(slice(start, end), codes),:]
+    elif type(tickers) is list:
+        data = ol_data.loc[(slice(start, end), tickers),:]
+    close = data.pivot_table(values=['Adj Close'], index=['date'],
+                     columns=['code'])['Adj Close']
+    corr = close.corr()
+    
+    return corr
 # ====================
-
 
 df_code = pd.read_excel('data/etf_pair_code.xlsx', dtype={'symbol':str})
 sector_list = df_code.sector.unique().tolist()
@@ -490,6 +517,6 @@ ol_data = get_data('data/data.csv')
 # 	ol_data = get_data('data/data.csv')
 # except:
 # 	print('there is something wrong')
-us_data = get_data('data/us_data.csv')
-hk_data = get_data('data/hk_data.csv')
+# us_data = get_data('data/us_data.csv')
+# hk_data = get_data('data/hk_data.csv')
 

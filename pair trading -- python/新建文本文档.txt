@@ -8,3 +8,22 @@
 boll πÏµ¿
 hkd ita
 ewm Œ Ã‚?
+
+How to set 'CshAdjAbnormal', 'CapChg', 'CshAdjNormal' parameters?
+
+
+Hi, thank you first, there is a question. 
+
+I want to set parameters, like 'CshAdjAbnormal', 'CapChg', 'CshAdjNormal'.
+
+Is the code like this?
+
+fields = ['HIGH', 'OPEN', 'LOW', 'VOLUME', 'PX_LAST']
+
+con.bdh("IBM US Equity", 
+             fields , 
+             '20181101', 
+             ''20181201',
+             ovrds=[('CshAdjAbnormal', False), 
+             ('CapChg', False),
+             ('CshAdjNormal', False)])
