@@ -53,4 +53,5 @@ def update(start='20100101'):
 
     toc = time.perf_counter()
     df.to_csv('data/data.csv')
+    con.stop()
     print('retrieve data cost time: %.2f' % (toc-tic))
