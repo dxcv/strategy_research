@@ -27,3 +27,27 @@ con.bdh("IBM US Equity",
              ovrds=[('CshAdjAbnormal', False), 
              ('CapChg', False),
              ('CshAdjNormal', False)])
+===================================
+https://github.com/Alvin9999/new-pac/wiki/
+https://www.one-tab.com/page/16Z3ZkiLTC6uAJRV-iqKGw
+===================================
+[root@host ~]# gcc -v
+Using built-in specs.
+COLLECT_GCC=gcc
+COLLECT_LTO_WRAPPER=/usr/local/libexec/gcc/i686-pc-linux-gnu/4.8.2/lto-wrapper
+Target: i686-pc-linux-gnu
+Configured with: ../configure --enable-checking=release --enable-languages=c,c++ --disable-multilib
+Thread model: posix
+gcc version 4.8.2 (GCC) 
+[root@host ~]# ls
+20180830.1  gcc-4.8.2.tar.gz              ssr.sh                     udp2raw_binaries.tar.gz  version.txt
+gcc-4.8.2   kcptun_for_ss_ssr-install.sh  ss-ssr-kcptun-install.log  udp2raw-tunnel
+[root@host ~]# cd  udp2raw-tunnel/
+[root@host udp2raw-tunnel]# make
+echo "const char *gitversion = \"168ae1e2ae7e5c0137e076d2ba19eee887af7f65\";" > git_version.h
+rm -f udp2raw
+g++   -o udp2raw          -I. main.cpp lib/md5.cpp lib/pbkdf2-sha1.cpp lib/pbkdf2-sha256.cpp encrypt.cpp log.cpp network.cpp common.cpp  connection.cpp misc.cpp fd_manager.cpp client.cpp server.cpp -lpthread my_ev.cpp -isystem libev lib/aes_faster_c/aes.cpp lib/aes_faster_c/wrapper.cpp -std=c++11 -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-missing-field-initializers  -lrt -ggdb -static -O3
+/usr/bin/ld: cannot find -lpthread
+collect2: error: ld returned 1 exit status
+make: *** [all] Error 1
+============================================
