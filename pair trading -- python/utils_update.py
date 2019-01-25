@@ -27,8 +27,8 @@ def update(start='20100101'):
 #     start = '20100101'
     end = datetime.datetime.today().strftime('%Y%m%d')
 
-    ticker_list.remove('HKD Curncy')
-    #ticker_list.remove('ita')
+    # ticker_list.remove('HKD Curncy')
+    # ticker_list.remove('ita')
     intervals = np.linspace(0, len(ticker_list), 10, dtype=int)
     tic = time.perf_counter()
 

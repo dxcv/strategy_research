@@ -1,3 +1,9 @@
+wget --no-check-certificate -O ./kcptun_for_ss_ssr-install.sh https://raw.githubusercontent.com/onekeyshell/kcptun_for_ss_ssr/master/kcptun_for_ss_ssr-install.sh && chmod 700 ./kcptun_for_ss_ssr-install.sh &&  ./kcptun_for_ss_ssr-install.sh install
+
+
+./udp2raw_amd64 -c -l0.0.0.0:3333  -r	67.216.219.26:4096 -k Hao54321. --raw-mode faketcp   --cipher-mode xor  -a
+
+
 旨在整理和回顾这段时间的工作内容
 看哪些做的不足
 哪些需要改进
@@ -51,3 +57,34 @@ g++   -o udp2raw          -I. main.cpp lib/md5.cpp lib/pbkdf2-sha1.cpp lib/pbkdf
 collect2: error: ld returned 1 exit status
 make: *** [all] Error 1
 ============================================
+
+Congratulations, install completed!
+========================= Your Server Setting =========================
+Your Server IP: 67.216.219.26
+-------------------- Shadowsocksrr Setting --------------------
+SSRR configure file         : /usr/local/shadowsocksrr/user-config.json
+SSRR Server Port            : 4862
+SSRR Password               : Hao54321.
+SSRR Encryption Method      : chacha20-ietf
+SSRR protocol               : auth_chain_d
+SSRR obfs                   : plain
+----------------------------------------------------------
+SSRR status manage: /etc/init.d/ssrr {start|stop|restart|status|config|version}
+==========================================================
+-------------------- KCPTUN Setting --------------------
+Kcptun configure file     : /usr/local/kcptun/config.json
+Kcptun Server Port        : 666
+Kcptun Key                : Hao54321.
+Kcptun Crypt mode         : aes-192
+Kcptun Fast mode          : fast3
+Kcptun MTU                : 1350
+Kcptun sndwnd             : 1024
+Kcptun rcvwnd             : 1024
+Kcptun compression        : enable
+----------------------------------------------------------
+Kcptun config for SS/SSR/Phone:
+KCP Port      : 666
+KCP parameter : --crypt aes-192 --key Hao54321. --mtu 1350 --sndwnd 128 --rcvwnd 1024 --mode fast3
+----------------------------------------------------------
+Kcptun status manage: /etc/init.d/kcptun {start|stop|restart|status|config|version}
+==========================================================
