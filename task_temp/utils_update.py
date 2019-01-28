@@ -18,7 +18,7 @@ def update(start='20100101'):
 
     df_code = pd.read_excel('data/etf_pair_code.xlsx', dtype={'symbol':str})
     code_list = df_code.symbol.unique().tolist()
-    ticker_list = (df_code.symbol + ' ' + df_code.region).fillna('ita').unique().tolist()
+    ticker_list = (df_code.symbol + ' ' + df_code.region).unique().tolist()
 
     fields = ['HIGH', 'OPEN', 'LOW', 'VOLUME', 'PX_LAST']
     # cols = ['High', 'Open', 'Low', 'Volume', 'Adj Close']
@@ -27,8 +27,8 @@ def update(start='20100101'):
 #     start = '20100101'
     end = datetime.datetime.today().strftime('%Y%m%d')
 
-    ticker_list.remove('HKD Curncy')
-    ticker_list.remove('ita')
+    # ticker_list.remove('HKD Curncy')
+    # ticker_list.remove('ita')
     intervals = np.linspace(0, len(ticker_list), 10, dtype=int)
     tic = time.perf_counter()
 
@@ -53,4 +53,5 @@ def update(start='20100101'):
 
     toc = time.perf_counter()
     df.to_csv('data/data.csv')
+    con.stop()
     print('retrieve data cost time: %.2f' % (toc-tic))
