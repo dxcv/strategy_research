@@ -24,6 +24,8 @@ try:
     from tqdm import tqdm_notebook
 except:
     pass
+import pdblp as pb
+import blpapi
 
 
 # ====================
@@ -421,9 +423,18 @@ def store_in_excel(result, is_saving, save_name):
 
 # ====================
 
+def exchange_conversion(data):
+    
+    con = pb.BCon(port=8194, timeout=5000)
+    con.start()
 
-def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='rolling', 
-              period=245, rt_period=490, rsi_period=14, upper=70, lower=30, show_bar=True,start=2010, end=2019):
+    code = 'USDHKD BGNL Curncy'
+    start = '20100101'
+    end = datetime.datetime.today().strftime('%Y%m%d')
+    df = con.bdh(code, ['PX_LAST'], start, end)
+
+# ====================
+def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, save_name=None, method='rolling', period=245, rt_period=490, rsi_period=14, upper=70, lower=30, show_bar=True,start='2010', end='2099'):
     """
     Implements:
         计算一组assets的pair trading, 并且可以选择是否存入到excel表中
@@ -435,8 +446,8 @@ def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, s
         data_source -- 字符串数据类型,
                     -- 'us', 本地美股数据,
                     -- 'hk', 本地港股数据,
-                    -- 'ol', 在线获取数据.
-                    -- 'custom', 自定义数据时间段
+                    -- 'ol', 通过bloomberg获取到的数据
+                    -- 'ex_adj', 经过汇率换算后的数据
         is_saving -- 是否保存/保存哪些表 
                   -- True, bool type, 保存所有的表进excel
                   -- 'all', str type, 保存所有的表进excel
@@ -450,8 +461,17 @@ def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, s
                     -- rolling, 表示用最近一段时间的ratio值做算术移动平均值
                     -- ewm, 表示用最近一段时间的ratio值做指数移动平均值
         period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
-        rt_period -- integer, 计算return的时候
-        show_bar -- 是否显示计算过程中的进度条
+        rt_period -- integer, 表示取多少根最近的return求平均值
+        rsi_period -- rsi lookback window
+        upper -- rsi upper bound, 70 as the default value
+        lower -- rsi lower bound, 30 as the default value
+        show_bar -- 计算过程中是否显示进度条
+        start -- 行情数据的开始日期, 可以是具体到年,月,日;
+                 e.g. '2010-01-01', or '2010-01', or '2010';
+                 默认值是'2010', 代表是从2010年开始取数
+        end -- 行情数据的结束日期, 可以是具体到年,月,日;
+                 e.g. '2019-01-01', or '2019-01', or '2019';
+                 默认值是'2099', 表示数据取到2099年为止;起始也就是取到最新日期;
     """    
     
     if symbol in etf_list:
@@ -471,8 +491,14 @@ def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, s
         data = hk_data
     elif data_source == 'ol':
         data = ol_data
-    elif data_source == 'custom':
-        data = ol_data.loc[(slice(start, end), slice(None)), :]
+    elif data_source == 'ex_ajd':
+        data = 
+    
+    try:
+        data = data.loc[(slice(start, end), slice(None)), :]
+    except:
+        print('data slicing has something wrong')
+        
     
         
     result = batch_pair_trading(code_list, data, method, period, rt_period, rsi_period, upper, lower, show_bar)
