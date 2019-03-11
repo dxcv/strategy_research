@@ -78,3 +78,46 @@ def calc_mean(df):
             'wr8': df.wr8.mean()
         }
     )
+
+    car1 = ret[::-1].rolling(1, min_periods=1).apply(np.prod, raw=True)[::-1] - \
+        dret[::-1].rolling(1, min_periods=1).apply(np.prod, raw=True)[::-1]
+    car3 = ret[::-1].rolling(3, min_periods=1).apply(np.prod, raw=True)[::-1] - \
+        dret[::-1].rolling(3, min_periods=1).apply(np.prod, raw=True)[::-1]
+    car5 = ret[::-1].rolling(5, min_periods=1).apply(np.prod, raw=True)[::-1] - \
+        dret[::-1].rolling(5, min_periods=1).apply(np.prod, raw=True)[::-1]
+    
+    wr5 = ret[::-1].rolling(5, min_periods=1).apply(np.prod, raw=True)[::-1] / \
+        dret[::-1].rolling(5, min_periods=1).apply(np.prod, raw=True)[::-1]
+    
+    ret_n1 = ret[::-1].rolling(1, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n2 = ret[::-1].rolling(2, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n3 = ret[::-1].rolling(3, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n4 = ret[::-1].rolling(4, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n5 = ret[::-1].rolling(5, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n6 = ret[::-1].rolling(6, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n7 = ret[::-1].rolling(7, min_periods=1).apply(np.prod, raw=True)[::-1]
+    ret_n8 = ret[::-1].rolling(8, min_periods=1).apply(np.prod, raw=True)[::-1]
+    
+    res = pd.DataFrame({
+        'date':df.date,
+        'mv':df.mv,
+#         'mv_adj':df.mv_adj,
+#         'ret_p1':df.ret_p1,
+        'retx_p1':df.retx_p1,
+#         'dret_p1':df.dret_p1,
+        'exf':exf,
+        'exf_to_mv':exf_to_mv,
+        'car1':car1.shift(-1),
+        'car3':car3.shift(-1),
+        'car5':car5.shift(-1),
+        'wr5':wr5.shift(-1),
+        'ret_n1':ret_n1.shift(-1),
+        'ret_n2':ret_n2.shift(-1),
+        'ret_n3':ret_n3.shift(-1),
+        'ret_n4':ret_n4.shift(-1),
+        'ret_n5':ret_n5.shift(-1),
+        'ret_n6':ret_n6.shift(-1),
+        'ret_n7':ret_n7.shift(-1),
+        'ret_n8':ret_n8.shift(-1)
+    })
+    return res
