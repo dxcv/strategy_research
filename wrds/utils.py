@@ -121,3 +121,53 @@ def calc_mean(df):
         'ret_n8':ret_n8.shift(-1)
     })
     return res
+
+
+
+def rolling_forward(df, roll_per, min_per=1):
+    return ((df[::-1]).rolling(roll_per, min_per).apply(np.prod, raw=True))[::-1]
+
+def calc_exf(df):
+    ret = df.ret_p1
+    dret = df.dret_p1
+    exf = df.mv - df.mv.shift(1) * df.retx_p1
+    exf_to_mv = exf / df.mv.shift(1)
+    
+    car1 = rolling_forward(ret, 1) - rolling_forward(dret, 1)
+    car3 = rolling_forward(ret, 3) - rolling_forward(dret, 3)
+    car5 = rolling_forward(ret, 5) - rolling_forward(dret, 5)
+    
+    wr5 = rolling_forward(ret, 5) - rolling_forward(dret, 5)
+    
+    ret_n1 = rolling_forward(ret, 1)
+    ret_n2 = rolling_forward(ret, 2)
+    ret_n3 = rolling_forward(ret, 3)
+    ret_n4 = rolling_forward(ret, 4)
+    ret_n5 = rolling_forward(ret, 5)
+    ret_n6 = rolling_forward(ret, 6)
+    ret_n7 = rolling_forward(ret, 7)
+    ret_n8 = rolling_forward(ret, 8)
+    
+    res = pd.DataFrame({
+        'date':df.date,
+        'mv':df.mv,
+#         'mv_adj':df.mv_adj,
+#         'ret_p1':df.ret_p1,
+        'retx_p1':df.retx_p1,
+#         'dret_p1':df.dret_p1,
+        'exf':exf,
+        'exf_to_mv':exf_to_mv,
+        'car1':car1.shift(-1),
+        'car3':car3.shift(-1),
+        'car5':car5.shift(-1),
+        'wr5':wr5.shift(-1),
+        'ret_n1':ret_n1.shift(-1),
+        'ret_n2':ret_n2.shift(-1),
+        'ret_n3':ret_n3.shift(-1),
+        'ret_n4':ret_n4.shift(-1),
+        'ret_n5':ret_n5.shift(-1),
+        'ret_n6':ret_n6.shift(-1),
+        'ret_n7':ret_n7.shift(-1),
+        'ret_n8':ret_n8.shift(-1)
+    })
+    return res
