@@ -41,6 +41,7 @@ def get_data(path, output_type='df'):
     Returns:
         data -- asset data, 数据类型: dataframe or QA_DataStruct
     """
+
     data = pd.read_csv(path, dtype={'code':str})
     try:
         data.columns = ['date', 'high', 'low', 'open', 'close', 'volume', 'Adj Close', 'code']
@@ -48,8 +49,10 @@ def get_data(path, output_type='df'):
         data.columns = ['date', 'high', 'open', 'low', 'volume', 'Adj Close', 'code']
     data.date = pd.DatetimeIndex(data.date)
     data = data.set_index(['date', 'code']).sort_index(level='date').dropna()
-    if output_type == 'qa':
-        data = QA.QA_DataStruct_Stock_day(data)
+# =============================================================================
+#     if output_type == 'qa':
+#         data = QA.QA_DataStruct_Stock_day(data)
+# =============================================================================
     return data
 
 
@@ -516,7 +519,10 @@ sector_list = df_code.sector.unique().tolist()
 etf_list = df_code.etf_symbol.unique().tolist()
 region_list = df_code.region.unique().tolist()
 
-ol_data = get_data('data/data.csv')
+try:
+    ol_data = get_data('data/data.zip')
+except:
+    ol_data = get_data('data/data.csv')
 # try:
 # 	ol_data = get_data('data/data.csv')
 # except:
