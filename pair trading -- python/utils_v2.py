@@ -190,7 +190,7 @@ def rsi_interval(value, upper, lower, return_method='string'):
             return value
 # ====================
 
-def single_pair_trading(data, code1, code2, method, period, rt_period, rsi_period, upper, lower):
+def single_pair_trading(data, code1, code2, method, period, rt_period, rsi_period, upper, lower, rt_data_type='mean'):
     """
     Implement:
         计算单对pair trading
@@ -247,8 +247,13 @@ def single_pair_trading(data, code1, code2, method, period, rt_period, rsi_perio
     asset_1_pct = asset_1_close.pct_change()
     asset_2_pct = asset_2_close.pct_change()
     
-    long_return = ((1+real_signal)/2 * asset_1_pct +  (1-real_signal)/2 * asset_2_pct)[-rt_period:].mean()
-    long_short_return = (real_signal * (asset_1_pct - asset_2_pct))[-rt_period:].mean()
+    # 这里表示最后是返回return的均值还是返回每日的return(即时间序列)
+    if rt_data_type == 'mean':
+        long_return = ((1+real_signal)/2 * asset_1_pct +  (1-real_signal)/2 * asset_2_pct)[-rt_period:].mean()
+        long_short_return = (real_signal * (asset_1_pct - asset_2_pct))[-rt_period:].mean()
+    elif rt_data_type == 'series':
+        long_return = ((1+real_signal)/2 * asset_1_pct +  (1-real_signal)/2 * asset_2_pct)
+        long_short_return = (real_signal * (asset_1_pct - asset_2_pct))
     
     result = {
         "ratio":ratio,
@@ -452,8 +457,8 @@ def calc_pair_trading(symbol, data_source='ol', region='all', is_saving=False, s
                     -- all, 表示用当前bar之前所有的ratio值求平均
                     -- rolling, 表示用最近一段时间的ratio值做算术移动平均值
                     -- ewm, 表示用最近一段时间的ratio值做指数移动平均值
-        period -- integer, 当avg_method为rolling或者ewm时, 需要计算最近多少根bar的平均值
-        rt_period -- integer, 计算return的时候
+        period -- integer, 当avg_method为rolling或者ewm时,  用最近多少个ratio的平均值来作为参考值; method为all的时候, 是把过去全部的ratio做平均, 然后作为参考值和当前ratio做比较
+        rt_period -- integer, 计算return的时候, 取最近多少return作为平均值
         show_bar -- 是否显示计算过程中的进度条
     """    
     
