@@ -1,3 +1,6 @@
 
 task_temp/data/us_data.csv
+task_temp/data/data.csv
 pair trading -- python/data/data.zip
+wrds/data/*.zip
+wrds/data/*.csv
